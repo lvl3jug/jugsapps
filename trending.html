@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Trending OSRS Items</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #0d1117;
+      background-image: url('https://runescape.wiki/images/Vorago_Wallpaper.jpg?8a713'); /* Replace with your image URL */
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      color: #c9d1d9;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    h1 {
+      color: #f0b90b;
+    }
+    button, select, input {
+      margin: 0.5rem;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 8px;
+      background-color: #f0b90b;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover, select:hover, input:hover {
+      background-color: #e0a800;
+    }
+    input[type="text"] {
+      background: #fff;
+      color: #000;
+    }
+    .item {
+      background: rgba(22, 27, 34, 0.8); /* Transparent background to see the image behind */
+      margin: 1rem auto;
+      padding: 1rem;
+      border-radius: 8px;
+      width: 360px;
+      box-shadow: 0 0 10px #00000080;
+      position: relative;
+      transition: transform 0.2s ease;
+    }
+    .item:hover {
+      transform: scale(1.03);
+    }
+    .icon {
+      width: 32px;
+      height: 32px;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+    canvas {
+      width: 100% !important;
+      height: 150px !important;
+      margin-top: 10px;
+    }
+
+    #backButton {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      background-color: #f0b90b;
+      color: #000;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-weight: bold;
+      box-shadow: 0 0 6px #00000060;
+      transition: background 0.3s ease;
+    }
+    #backButton:hover {
+      background-color: #e0a800;
+    }
+
+  </style>
+</head>
+<body>
+  <a href="index.html" id="backButton">← Back to Index</a>
+  
+  <h1>🔥 Trending OSRS Items</h1>
+  <div>
+    <button id="toggleButton">Show Top Fallers ⬇️</button>
+    <select id="membershipFilter">
+      <option value="all">All Items</option>
+      <option value="free">Free-to-Play</option>
+      <option value="members">Members Only</option>
+    </select>
+    <input type="text" id="searchInput" placeholder="Search item...">
+    <button id="searchButton">Search</button>
+  </div>
+  <div id="items">Loading the market scrolls...</div>
+
+  <script>
+    let showingRisers = true;
+    let itemMap = {};
+
+    async function fetchWithHeaders(url) {
+      return fetch(url, {
+        method: 'GET',
+        headers: {
+          'User-Agent': 'OSRS-Trending-Viewer/1.0',
+          'Accept': 'application/json'
+        }
+      });
+    }
+
+    async function getItemMapping() {
+      const res = await fetchWithHeaders('https://prices.runescape.wiki/api/v1/osrs/mapping');
+      const items = await res.json();
+      const map = {};
+      for (let item of items) {
+        map[item.id] = item;
+        map[item.name.toLowerCase()] = item;
+      }
+      return map;
+    }
+
+    async function getItemTimeseries(id) {
+      const res = await fetchWithHeaders(`https://prices.runescape.wiki/api/v1/osrs/timeseries?timestep=6h&id=${id}`);
+      const json = await res.json();
+      return json.data || [];
+    }
+
+    async function renderItem(itemData, mapped) {
+      const name = mapped.name;
+      const iconUrl = `https://oldschool.runescape.wiki/images/${encodeURIComponent(name.replace(/ /g, '_'))}_icon.png`;
+
+      const div = document.createElement('div');
+      div.className = 'item';
+      const canvasId = `chart-${itemData.id}-${Math.random().toString(36).substring(2)}`;
+
+      div.innerHTML = `
+        <div>
+          <img class="icon" src="${iconUrl}" alt="${name} icon" onerror="this.style.display='none'">
+          <strong>${name}</strong>
+        </div>
+        📈 High: ${itemData.high.toLocaleString()} gp<br>
+        📉 Low: ${itemData.low.toLocaleString()} gp<br>
+        💥 Change: ${itemData.change.toFixed(2)}%
+        <canvas id="${canvasId}"></canvas>
+      `;
+      document.getElementById('items').appendChild(div);
+
+      const timeseries = await getItemTimeseries(itemData.id);
+      const labels = timeseries.map(entry => new Date(entry.timestamp * 1000).toLocaleDateString());
+      const prices = timeseries.map(entry => entry.avgHighPrice || 0);
+
+      const ctx = document.getElementById(canvasId).getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: `${name} Price`,
+            data: prices,
+            borderColor: showingRisers ? '#28a745' : '#dc3545',
+            backgroundColor: showingRisers ? 'rgba(40, 167, 69, 0.1)' : 'rgba(220, 53, 69, 0.1)',
+            fill: true,
+            pointRadius: 0,
+            tension: 0.3
+          }]
+        },
+        options: {
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { display: false },
+            y: { display: false }
+          }
+        }
+      });
+    }
+
+    async function fetchTrendingItems() {
+      const membershipSetting = document.getElementById('membershipFilter').value;
+      const [mapping, priceData] = await Promise.all([ 
+        getItemMapping(), 
+        fetchWithHeaders('https://prices.runescape.wiki/api/v1/osrs/5m').then(r => r.json())
+      ]);
+      itemMap = mapping;
+
+      const entries = Object.entries(priceData.data);
+
+      const trending = entries
+        .map(([id, item]) => {
+          const high = item.avgHighPrice || 1;
+          const low = item.avgLowPrice || 1;
+          const change = ((high - low) / low) * 100;
+          return {
+            id: parseInt(id),
+            high,
+            low,
+            change
+          };
+        })
+        .filter(item => {
+          const mapped = mapping[item.id];
+          if (!mapped) return false;
+          if (membershipSetting === 'free' && mapped.members === true) return false;
+          if (membershipSetting === 'members' && mapped.members === false) return false;
+          return true;
+        })
+        .sort((a, b) => {
+          return showingRisers
+            ? Math.abs(b.change) - Math.abs(a.change)
+            : Math.abs(a.change) - Math.abs(b.change);
+        })
+        .slice(0, 5);
+
+      const container = document.getElementById('items');
+      container.innerHTML = '';
+      for (let item of trending) {
+        const mapped = mapping[item.id];
+        if (!mapped) continue;
+        await renderItem(item, mapped);
+        await new Promise(resolve => setTimeout(resolve, 800));
+      }
+    }
+
+    async function searchItem() {
+      const query = document.getElementById('searchInput').value.trim().toLowerCase();
+      const match = itemMap[query];
+      if (!match) {
+        alert("Item not found. Try something else, adventurer!");
+        return;
+      }
+
+      const res = await fetchWithHeaders('https://prices.runescape.wiki/api/v1/osrs/5m');
+      const priceData = await res.json();
+      const price = priceData.data[match.id];
+      if (!price) {
+        alert("No price data for this item.");
+        return;
+      }
+
+      const high = price.avgHighPrice || 1;
+      const low = price.avgLowPrice || 1;
+      const change = ((high - low) / low) * 100;
+      const itemData = { id: match.id, high, low, change };
+
+      const container = document.getElementById('items');
+      container.innerHTML = '';
+      await renderItem(itemData, match);
+    }
+
+    document.getElementById('toggleButton').addEventListener('click', () => {
+      showingRisers = !showingRisers;
+      document.getElementById('toggleButton').textContent =
+        showingRisers ? 'Show Top Fallers ⬇️' : 'Show Top Risers ⬆️';
+      fetchTrendingItems();
+    });
+
+    document.getElementById('membershipFilter').addEventListener('change', fetchTrendingItems);
+    document.getElementById('searchButton').addEventListener('click', searchItem);
+
+    fetchTrendingItems();
+  </script>
+</body>
+</html>
