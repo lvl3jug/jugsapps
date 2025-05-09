@@ -174,7 +174,6 @@
 
       const lowPrice = itemData.low ? itemData.low : 0;
       const highPrice = itemData.high ? itemData.high : 0;
-      const avgPrice = (lowPrice + highPrice) / 2;
       const change = lowPrice && highPrice ? ((highPrice - lowPrice) / lowPrice) * 100 : 0;
 
       div.innerHTML = `
@@ -184,7 +183,6 @@
         </div>
         📈 High: ${highPrice > 0 ? highPrice.toLocaleString() : 'N/A'} gp<br>
         📉 Low: ${lowPrice > 0 ? lowPrice.toLocaleString() : 'N/A'} gp<br>
-        📊 Avg: ${avgPrice > 0 ? avgPrice.toLocaleString() : 'N/A'} gp<br>
         💥 Change: ${change > 0 ? change.toFixed(2) : 'N/A'}%
         <canvas id="${canvasId}"></canvas>
       `;
@@ -192,40 +190,27 @@
 
       const timeseries = await getItemTimeseries(itemData.id);
       const labels = timeseries.map(entry => new Date(entry.timestamp * 1000).toLocaleDateString());
-      const highPrices = timeseries.map(entry => entry.avgHighPrice || 0);
-      const lowPrices = timeseries.map(entry => entry.avgLowPrice || 0);
+      const prices = timeseries.map(entry => entry.avgHighPrice || 0);
 
       const ctx = document.getElementById(canvasId).getContext('2d');
       new Chart(ctx, {
         type: 'line',
         data: {
           labels: labels,
-          datasets: [
-            {
-              label: `${name} High Price`,
-              data: highPrices,
-              borderColor: '#28a745',
-              backgroundColor: 'rgba(40, 167, 69, 0.3)',
-              fill: true,
-              pointRadius: 4,
-              tension: 0.4,
-              borderWidth: 2,
-            },
-            {
-              label: `${name} Low Price`,
-              data: lowPrices,
-              borderColor: '#dc3545',
-              backgroundColor: 'rgba(220, 53, 69, 0.3)',
-              fill: true,
-              pointRadius: 4,
-              tension: 0.4,
-              borderWidth: 2,
-            }
-          ],
+          datasets: [{
+            label: `${name} Price`,
+            data: prices,
+            borderColor: showingRisers ? '#28a745' : '#dc3545',
+            backgroundColor: showingRisers ? 'rgba(40, 167, 69, 0.3)' : 'rgba(220, 53, 69, 0.3)',
+            fill: true,
+            pointRadius: 4,
+            tension: 0.4,
+            borderWidth: 2,
+          }],
         },
         options: {
           plugins: {
-            legend: { display: true },
+            legend: { display: false },
             tooltip: {
               callbacks: {
                 label: function (tooltipItem) {
@@ -235,7 +220,7 @@
             },
           },
           scales: {
-            x: {
+            x: { 
               ticks: {
                 maxRotation: 90,
                 minRotation: 45,
