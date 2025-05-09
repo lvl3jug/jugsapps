@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jug's Apps</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #000;
+            background-image: url('https://oldschool.runescape.wiki/images/Login_background_%28old%29.png?ea8d6'); /* Change this to your preferred background */
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: #FFA500;
+            backdrop-filter: brightness(0.6); /* Optional: dims the background slightly for readability */
+        }
+
+        h1 {
+            color: #FFA500;
+            margin-bottom: 20px;
+            font-size: 2.5rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 8px rgba(255, 165, 0, 0.7);
+        }
+
+        .intro-text {
+            font-size: 1.2rem;
+            color: #FFD580;
+            margin-bottom: 30px;
+            max-width: 800px;
+            line-height: 1.6;
+            text-shadow: 1px 1px 3px rgba(255, 165, 0, 0.5);
+            margin-left: 15px;
+            margin-right: 15px;
+        }
+
+        .file-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .file-list li {
+            background-color: rgba(0, 0, 0, 0.6);
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(255, 140, 0, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .file-list li:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 18px rgba(255, 140, 0, 0.5);
+        }
+
+        .file-list a {
+            text-decoration: none;
+            color: #FFA500;
+            font-size: 1.2rem;
+            font-weight: 600;
+            display: block;
+            text-align: center;
+            text-shadow: 1px 1px 2px #000;
+        }
+
+        .file-list a:hover {
+            text-decoration: underline;
+            color: #FF8C00;
+        }
+
+        .file-list li:active {
+            transform: translateY(2px);
+        }
+
+        @media screen and (max-width: 768px) {
+            h1 { font-size: 2rem; }
+            .intro-text { font-size: 1rem; margin-left: 10px; margin-right: 10px; }
+            .file-list a { font-size: 1rem; }
+            .file-list li { padding: 12px; }
+            .top-right-img, .bottom-right-img {
+                width: 50%;
+                position: static;
+                box-shadow: none;
+                margin: 0;
+            }
+            .images-container {
+                display: flex;
+                justify-content: space-between;
+                width: 100%;
+            }
+            .images-container a {
+                width: 48%;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            h1 { font-size: 1.8rem; }
+            .intro-text { font-size: 0.9rem; }
+            .file-list a { font-size: 0.9rem; }
+            .file-list li { padding: 10px; }
+            .top-right-img, .bottom-right-img {
+                width: 40%;
+            }
+        }
+
+        .top-right-img, .bottom-right-img {
+            width: 100px;
+            height: auto;
+            box-shadow: 0 4px 12px rgba(255, 140, 0, 0.4);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .top-right-img:hover,
+        .bottom-right-img:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 24px rgba(255, 140, 0, 0.7);
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Welcome to Jug's Apps</h1>
+    <p class="intro-text">Explore the blazing tools and fiery features forged for your OSRS adventures! Click below and let the magic unfold.</p>
+    
+    <ul class="file-list">
+        <li><a href="./ge-tracker%20v6.html">OSRS Price Checker</a></li>
+        <li><a href="./calc.html">Price Calculator</a></li>
+        <li><a href="./trending.html">Trending Items</a></li>
+    </ul>
+
+    <div class="images-container">
+        <a href="https://ko-fi.com/lvl3jug" target="_blank">
+            <img class="bottom-right-img" src="https://cdn.prod.website-files.com/5c14e387dab576fe667689cf/670f5a01229bf8a18f97a3c1_favion-p-500.png" alt="Ko-Fi Logo">
+        </a>
+        <a href="https://www.youtube.com/@chimkinnchip" target="_blank">
+            <img class="top-right-img" src="https://i.imgur.com/z1nRa5C.png" alt="YouTube Logo">
+        </a> 
+    </div>
+
+    <script>
+        document.querySelectorAll('.file-list a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = this.getAttribute('href');
+            });
+        });
+    </script>
+</body>
+</html>
