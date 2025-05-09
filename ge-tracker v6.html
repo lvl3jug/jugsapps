@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- Meta tags for character set and responsive design -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- Title of the page -->
+  <title>Jugs OSRS Price Tracker</title>
+
+  <!-- Linking external libraries (Chart.js and Chart.js Zoom plugin) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+
+  <!-- Linking Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+  <style>
+    /* General body and HTML styling */
+    body, html {
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', sans-serif;
+      background-color: #121212;  /* Dark background */
+      color: #ffff00;  /* RS Yellow text */
+      height: 100%;
+      background-image: url('https://i.imgur.com/jLzPwzz.png'); /* Background image */
+      background-size: cover;
+      background-position: center center;
+      background-attachment: fixed;
+      background-repeat: no-repeat;
+    }
+
+    /* Overlay on the background image */
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8); /* Semi-transparent overlay */
+      z-index: -1;
+    }
+
+    /* Container to center and arrange the left-panel */
+    .container {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 40px;
+      gap: 40px;
+      flex-wrap: wrap;
+      margin: 0 auto;
+    }
+
+    /* Styling for the left-panel */
+    .left-panel {
+      max-width: 700px;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      background: rgba(26, 26, 26, 0.8); /* Semi-transparent background */
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      backdrop-filter: blur(10px);  /* Blur effect */
+    }
+
+    /* Styling for the headings */
+    h1, h2 {
+      font-size: 2rem;
+      text-align: center;
+      margin-bottom: 20px;
+      color: #ffff00;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6);
+      font-weight: 600;
+    }
+
+    /* Styling for inputs and buttons */
+    input, button {
+      padding: 12px;
+      margin: 12px 0;
+      font-size: 1.1rem;
+      border-radius: 8px;
+      border: 1px solid #333;
+      width: 100%;
+      background-color: #333;
+      color: #ffff00;
+      transition: 0.3s ease;
+      box-sizing: border-box;
+    }
+
+    /* Hover/focus effect for input fields and buttons */
+    input:focus, button:hover {
+      background-color: #F4A300;
+      color: #1A1A1A;
+      border-color: #F4A300;
+      outline: none;
+    }
+
+    /* Styling for the button */
+    button {
+      cursor: pointer;
+      border: none;
+      background-color: #ffff00;
+      color: #1A1A1A;
+      font-weight: bold;
+      transition: transform 0.2s ease-in-out;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Hover effect for the button */
+    button:hover {
+      transform: scale(1.05);
+    }
+
+    /* Styling for suggestions list */
+    .suggestions {
+      max-height: 200px;
+      overflow-y: auto;
+      border-radius: 8px;
+      background-color: #222;
+      margin-top: 5px;
+      padding: 10px;
+      display: none;  /* Hidden initially */
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Styling for individual suggestion items */
+    .suggestion {
+      padding: 4px;
+      margin: 5px 0;
+      background-color: #333;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: background-color 0.3s ease;
+      font-size: 1.1rem;
+    }
+
+    /* Hover effect for suggestions */
+    .suggestion:hover {
+      background-color: #F4A300;
+      color: #1A1A1A;
+    }
+
+    /* Styling for the chart container */
+    .chart-container {
+      margin-top: 20px;
+      width: 100%;
+      height: 400px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Ensures that the canvas receives pointer events */
+    canvas {
+      pointer-events: auto !important;
+    }
+
+    /* Styling for item information display */
+    .item-info {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    /* Styling for item images */
+    .item-info img {
+      width: 250px;
+      height: 250px;
+      object-fit: contain;
+      margin-left: 15px;
+      image-rendering: pixelated; /* Nearest neighbor filtering */
+    }
+
+    /* Media query for smaller screens (responsive design) */
+    @media screen and (max-width: 600px) {
+      h1 {
+        font-size: 1.8rem;
+      }
+
+      input, button {
+        font-size: 1rem;
+      }
+
+      .chart-container {
+        height: 300px;
+      }
+
+      .item-info img {
+        width: 40px;
+        height: 40px;
+      }
+
+      .suggestion {
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Overlay behind content -->
+  <div class="overlay"></div>
+
+  <!-- Main container for content -->
+  <div class="container">
+    <!-- Left panel for input, suggestions, and results -->
+    <div class="left-panel">
+      <!-- Heading -->
+      <h1>🔎 Jugs OSRS Price Tracker</h1>
+
+      <!-- Input for searching items -->
+      <input id="itemInput" placeholder="Enter item name or ID" oninput="showSuggestions()" autocomplete="off" />
+      
+      <!-- Suggestions dropdown -->
+      <div id="suggestions" class="suggestions"></div>
+
+      <!-- Button to check the price of the item -->
+      <button onclick="fetchPrice()">Check Price</button>
+
+      <!-- Result area to display the price and details -->
+      <div id="result">Search for an item above! ⬆️</div>
+
+      <!-- Chart container for price trend -->
+      <div class="chart-container">
+        <canvas id="priceChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let itemList = [];  // Array to hold item data
+    let chartInstance = null;  // Chart instance for price trend
+
+    // Load the item list from the API
+    async function loadItems() {
+      try {
+        const res = await fetch("https://prices.runescape.wiki/api/v1/osrs/mapping", {
+          headers: { 'User-Agent': 'OSRSPriceTracker/1.0 (contact@example.com)' }
+        });
+        itemList = await res.json();  // Store the item data
+      } catch (err) {
+        console.error("Failed to load item list:", err);  // Handle error loading item list
+      }
+    }
+
+    // Show suggestions as user types in the input field
+    function showSuggestions() {
+      const input = document.getElementById("itemInput").value.trim().toLowerCase();
+      const suggestions = document.getElementById("suggestions");
+      suggestions.innerHTML = '';  // Clear previous suggestions
+
+      if (input.length < 2) {
+        suggestions.style.display = 'none';  // Hide suggestions if input is too short
+        return;
+      }
+
+      suggestions.style.display = 'block';  // Show suggestions
+
+      // Filter and display matching items
+      const matches = itemList.filter(i => i.name.toLowerCase().includes(input) || i.id.toString().includes(input)).slice(0, 10);
+      matches.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "suggestion";
+        div.innerHTML = highlightMatch(item.name, input);  // Highlight matching text
+        div.onclick = () => {
+          document.getElementById("itemInput").value = item.name;  // Set the input to the selected item
+          suggestions.innerHTML = '';  // Clear suggestions
+          suggestions.style.display = 'none';  // Hide suggestions
+        };
+        suggestions.appendChild(div);  // Append the suggestion to the dropdown
+      });
+    }
+
+    // Highlight the matching part of the suggestion
+    function highlightMatch(text, query) {
+      const startIndex = text.toLowerCase().indexOf(query.toLowerCase());
+      if (startIndex === -1) return text;
+      const endIndex = startIndex + query.length;
+      return `${text.slice(0, startIndex)}<span class="highlight">${text.slice(startIndex, endIndex)}</span>${text.slice(endIndex)}`;
+    }
+
+    // Fetch item price and details when button is clicked
+    async function fetchPrice() {
+      const input = document.getElementById("itemInput").value.trim();
+      const result = document.getElementById("result");
+
+      if (!input) {
+        result.innerHTML = "❗ Please enter an item name or ID.";  // Show error if input is empty
+        return;
+      }
+
+      result.innerHTML = "⏳ Fetching item data...";  // Show loading message
+
+      try {
+        const item = itemList.find(i => i.name.toLowerCase() === input.toLowerCase() || i.id.toString() === input);
+        if (!item) {
+          result.innerHTML = `❌ Item "${input}" not found.`;  // Show error if item is not found
+          return;
+        }
+
+        await new Promise(res => setTimeout(res, 1000));  // Simulate delay
+
+        // Fetch price and graph data concurrently
+        const [priceRes, graphRes] = await Promise.all([ 
+          fetch(`https://prices.runescape.wiki/api/v1/osrs/latest?id=${item.id}`, { 
+            headers: { 'User-Agent': 'OSRSPriceTracker/1.0 (contact@example.com)' }
+          }),
+          fetch(`https://prices.runescape.wiki/api/v1/osrs/timeseries?timestep=6h&id=${item.id}`, { 
+            headers: { 'User-Agent': 'OSRSPriceTracker/1.0 (contact@example.com)' }
+          })
+        ]);
+
+        // Process the responses
+        const priceJson = await priceRes.json();
+        const graphJson = await graphRes.json();
+        const price = priceJson.data[item.id];
+        const dataPoints = graphJson.data;
+
+        if (!price || !dataPoints) throw new Error("Missing data");
+
+        // Calculate average prices and profit margins
+        const avgHigh = Math.round(dataPoints.reduce((sum, pt) => sum + (pt.avgHighPrice || 0), 0) / dataPoints.length);
+        const avgLow = Math.round(dataPoints.reduce((sum, pt) => sum + (pt.avgLowPrice || 0), 0) / dataPoints.length);
+        const avgProfit = avgHigh - avgLow;
+
+        // Prepare chart data
+        const labels = dataPoints.map(d => new Date(d.timestamp * 1000).toLocaleDateString());
+        const prices = dataPoints.map(d => d.avgHighPrice || 0);
+
+        // Update chart with new data
+        if (chartInstance) {
+          chartInstance.data.labels = labels;
+          chartInstance.data.datasets[0].data = prices;
+          chartInstance.update();
+        } else {
+          const ctx = document.getElementById("priceChart").getContext("2d");
+          chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels,
+              datasets: [{
+                label: `${item.name} Price Trend`,
+                data: prices,
+                borderColor: '#FF5722',
+                backgroundColor: 'rgba(255, 87, 34, 0.2)',
+                tension: 0.4,
+                fill: true
+              }]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                zoom: {
+                  pan: {
+                    enabled: true,
+                    mode: 'xy',
+                    speed: 25,
+                  },
+                  zoom: {
+                    enabled: false,
+                  }
+                },
+              },
+              scales: {
+                y: {
+                  beginAtZero: false,
+                  ticks: {
+                    callback: function(value) {
+                      return value.toLocaleString();  // Format y-axis labels
+                    }
+                  }
+                },
+                x: {
+                  ticks: {
+                    maxRotation: 45,
+                    minRotation: 45
+                  }
+                }
+              }
+            }
+          });
+        }
+
+        // Generate the item info to display
+        const memberIcon = item.members ? '<img src="https://oldschool.runescape.wiki/images/Member_icon.png?1de0c" alt="Members item" style="width: 24px; vertical-align: middle;" />' : '<img src="https://oldschool.runescape.wiki/images/Free-to-play_icon.png?628ce" alt="Free-to-play item" style="width: 24px; vertical-align: middle;" />';
+
+        result.innerHTML =   
+          `<div class="item-info">
+            <div>
+              <h2>${item.name} ${memberIcon}</h2>
+              <p>📉 Current High: ${price.high?.toLocaleString() || "N/A"} gp<br/>
+              📈 Current Low: ${price.low?.toLocaleString() || "N/A"} gp<br/>
+              💰 Profit Margin: ${avgProfit.toLocaleString()} gp<br/>
+              📊 Daily Avg High: ${avgHigh.toLocaleString()} gp<br/>
+              📊 Daily Avg Low: ${avgLow.toLocaleString()} gp<br/>
+              🧪 High Alch: ${item.highalch || "Unknown"} gp</p>
+            </div>
+            <img src="${`https://oldschool.runescape.wiki/images/${item.name.replace(/ /g, "_")}.png`}" alt="${item.name}" style="width: 150px; height: 150px; object-fit: contain; image-rendering: pixelated; margin-left: 15px;" />
+          </div>
+          <p><a href="https://oldschool.runescape.wiki/w/${item.name.replace(/ /g, "_")}" target="_blank">🔎 View on Wiki 🔎</a></p>`;
+      } catch (error) {
+        result.innerHTML = `❌ Error: ${error.message}`;  // Display error message
+      }
+    }
+
+    loadItems();  // Load items when the page loads
+  </script>
+</body>
+
+</html>
